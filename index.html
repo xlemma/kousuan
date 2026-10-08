@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="default">
     <title>口算闪电战 · 分组版</title>
     <style>
@@ -49,7 +50,6 @@
             padding-left: 0.6rem;
         }
 
-        /* 配置面板：手机单列 */
         .config-panel {
             display: flex;
             flex-direction: column;
@@ -136,7 +136,6 @@
             flex: 1;
         }
 
-        /* 统计栏 */
         .stats-bar {
             display: flex;
             flex-wrap: wrap;
@@ -161,7 +160,6 @@
             white-space: nowrap;
         }
 
-        /* 组导航 */
         .group-nav {
             display: flex;
             align-items: center;
@@ -182,7 +180,6 @@
             min-height: 40px;
         }
 
-        /* 题目列表 */
         .problem-list {
             display: flex;
             flex-direction: column;
@@ -193,7 +190,6 @@
             margin-bottom: 1rem;
         }
 
-        /* 每道题：手机竖排 */
         .problem-item {
             display: flex;
             flex-direction: column;
@@ -242,7 +238,6 @@
             font-size: 1.1rem;
         }
 
-        /* 选项组：手机竖排 */
         .radio-group {
             display: flex;
             flex-direction: column;
@@ -289,7 +284,6 @@
             margin: 0;
         }
 
-        /* 汇总 */
         .summary-stats {
             background: #f8fafc;
             border-radius: 0.8rem;
@@ -327,7 +321,6 @@
             font-size: 0.9rem;
         }
 
-        /* 底部按钮 */
         .footer-actions {
             display: flex;
             flex-direction: column;
@@ -339,12 +332,10 @@
             width: 100%;
         }
 
-        /* 防止 iOS 输入框缩放 */
         input, select, textarea {
             font-size: 16px !important;
         }
 
-        /* 小屏适配 */
         @media (min-width: 600px) {
             .config-panel {
                 flex-direction: row;
@@ -685,12 +676,10 @@
                 }
             }
 
-            // 检查当前题是否对错和速度都标了
             const currentGlobal = globalIdxFromGroup(currentGroup, currentIndexInGroup);
             const currentRes = results[currentGlobal];
 
             if (currentRes.correct !== null && currentRes.timeFast !== null) {
-                // 两个都标了，可以跳下一题
                 if (currentIndexInGroup < GROUP_SIZE - 1) {
                     const nextGlobal = globalIdxFromGroup(currentGroup, currentIndexInGroup + 1);
                     if (nextGlobal < problems.length) {
@@ -701,16 +690,13 @@
                         renderProblems();
                     }
                 } else {
-                    // 本组最后一题
                     const nextGroup = currentGroup + 1;
                     if (nextGroup < getTotalGroups()) {
-                        // 自动进入下一组
                         currentGroup = nextGroup;
                         currentIndexInGroup = 0;
                         renderProblems();
                         startTimerForIndex(globalIdxFromGroup(currentGroup, 0));
                     } else {
-                        // 全部做完
                         renderProblems();
                         stopTimer();
                         currentTimerSpan.textContent = '0.0';
@@ -718,7 +704,6 @@
                     }
                 }
             } else {
-                // 还没标完，只更新显示
                 const scrollTop = problemList.scrollTop;
                 renderProblems();
                 problemList.scrollTop = scrollTop;
@@ -734,7 +719,6 @@
             let allAdd = [];
             let allSub = [];
 
-            // ---------- 生成加法和减法池 ----------
             if (difficulty === '10') {
                 for (let a = 1; a <= 9; a++) {
                     for (let b = 1; b <= 9; b++) {
@@ -758,7 +742,6 @@
                     }
                 }
             } else if (difficulty === '100_no_carry') {
-                // 加法：两位+一位，两位+两位，均不进位
                 for (let a = 10; a <= 99; a++) {
                     for (let b = 1; b <= 9; b++) {
                         if ((a % 10) + b <= 9) allAdd.push({ text: `${a}+${b}`, left: a, right: b, op: '+', answer: a + b });
@@ -770,7 +753,6 @@
                             allAdd.push({ text: `${a}+${b}`, left: a, right: b, op: '+', answer: a + b });
                     }
                 }
-                // 减法：两位-一位，两位-两位，均不退位
                 for (let a = 10; a <= 99; a++) {
                     for (let b = 1; b <= 9; b++) {
                         if ((a % 10) >= b) allSub.push({ text: `${a}-${b}`, left: a, right: b, op: '-', answer: a - b });
@@ -783,7 +765,6 @@
                     }
                 }
             } else if (difficulty === '100_carry') {
-                // 加法：进位（个位和>=10，且和<=100）
                 for (let a = 10; a <= 99; a++) {
                     for (let b = 1; b <= 9; b++) {
                         if ((a % 10) + b >= 10 && a + b <= 100) allAdd.push({ text: `${a}+${b}`, left: a, right: b, op: '+', answer: a + b });
@@ -795,7 +776,6 @@
                             allAdd.push({ text: `${a}+${b}`, left: a, right: b, op: '+', answer: a + b });
                     }
                 }
-                // 减法：退位（个位不够减，且被减数>=减数）
                 for (let a = 10; a <= 99; a++) {
                     for (let b = 1; b <= 9; b++) {
                         if ((a % 10) < b && a >= b) allSub.push({ text: `${a}-${b}`, left: a, right: b, op: '-', answer: a - b });
@@ -808,7 +788,6 @@
                 }
             }
 
-            // ---------- 去重（分别去重） ----------
             function dedup(arr) {
                 const seen = new Set();
                 return arr.filter(p => {
@@ -820,17 +799,15 @@
             allAdd = dedup(allAdd);
             allSub = dedup(allSub);
 
-            // ---------- 根据运算类型合并 ----------
             let newProblems = [];
             if (operation === 'add') {
                 newProblems = allAdd;
             } else if (operation === 'sub') {
                 newProblems = allSub;
-            } else { // mix
+            } else {
                 newProblems = allAdd.concat(allSub);
             }
 
-            // ---------- 排序 / 随机 ----------
             if (order === 'sequential') {
                 newProblems.sort((a, b) => {
                     if (a.left !== b.left) return a.left - b.left;
@@ -868,109 +845,158 @@
             renderProblems();
         }
 
-                    async function exportToExcel() {
-                if (problems.length === 0) return;
+        async function exportToExcel() {
+            if (problems.length === 0) return;
 
-                let lines = [];
-                lines.push(['题目', '正确答案', '对/错', '是否<2s', '实际耗时(秒)', '组号'].join(','));
+            let lines = [];
+            lines.push(['题目', '正确答案', '对/错', '是否<2s', '实际耗时(秒)', '组号'].join(','));
 
-                let totalCorrect = 0, totalMarkedCorrect = 0, totalFast = 0, totalMarkedFast = 0;
+            let totalCorrect = 0, totalMarkedCorrect = 0, totalFast = 0, totalMarkedFast = 0;
 
-                problems.forEach((prob, idx) => {
-                    const res = results[idx] || { correct: null, timeFast: null, timeSeconds: 0 };
-                    const correctStr = res.correct === true ? '对' : (res.correct === false ? '错' : '未标记');
-                    const fastStr = res.timeFast === true ? '是' : (res.timeFast === false ? '否' : '未标记');
-                    const timeStr = res.timeSeconds ? res.timeSeconds.toFixed(2) : '';
-                    const groupNo = Math.floor(idx / GROUP_SIZE) + 1;
+            problems.forEach((prob, idx) => {
+                const res = results[idx] || { correct: null, timeFast: null, timeSeconds: 0 };
+                const correctStr = res.correct === true ? '对' : (res.correct === false ? '错' : '未标记');
+                const fastStr = res.timeFast === true ? '是' : (res.timeFast === false ? '否' : '未标记');
+                const timeStr = res.timeSeconds ? res.timeSeconds.toFixed(2) : '';
+                const groupNo = Math.floor(idx / GROUP_SIZE) + 1;
 
-                    if (res.correct === true) totalCorrect++;
-                    if (res.correct !== null) totalMarkedCorrect++;
-                    if (res.timeFast === true) totalFast++;
-                    if (res.timeFast !== null) totalMarkedFast++;
+                if (res.correct === true) totalCorrect++;
+                if (res.correct !== null) totalMarkedCorrect++;
+                if (res.timeFast === true) totalFast++;
+                if (res.timeFast !== null) totalMarkedFast++;
 
-                    lines.push([
-                        `"${prob.text}"`,
-                        `"${prob.answer}"`,
-                        `"${correctStr}"`,
-                        `"${fastStr}"`,
-                        `"${timeStr}"`,
-                        `"${groupNo}"`
-                    ].join(','));
-                });
+                lines.push([
+                    `"${prob.text}"`,
+                    `"${prob.answer}"`,
+                    `"${correctStr}"`,
+                    `"${fastStr}"`,
+                    `"${timeStr}"`,
+                    `"${groupNo}"`
+                ].join(','));
+            });
 
-                // 分组汇总
-                lines.push('');
-                lines.push(['"=== 分组汇总 ==="'].join(','));
-                lines.push(['"组号"', '"题数"', '"正确数"', '"正确率"', '"<2s次数"', '"快速率"'].join(','));
+            lines.push('');
+            lines.push(['"=== 分组汇总 ==="'].join(','));
+            lines.push(['"组号"', '"题数"', '"正确数"', '"正确率"', '"<2s次数"', '"快速率"'].join(','));
 
-                const totalGroups = getTotalGroups();
-                for (let g = 0; g < totalGroups; g++) {
-                    const { start, end } = getGroupRange(g);
-                    let correct = 0, markedC = 0, fast = 0, markedF = 0;
-                    for (let i = start; i < end; i++) {
-                        const r = results[i];
-                        if (r.correct === true) correct++;
-                        if (r.correct !== null) markedC++;
-                        if (r.timeFast === true) fast++;
-                        if (r.timeFast !== null) markedF++;
-                    }
-                    const cRate = markedC ? (correct / markedC * 100).toFixed(1) + '%' : '—';
-                    const fRate = markedF ? (fast / markedF * 100).toFixed(1) + '%' : '—';
-                    lines.push([
-                        `"${g + 1}"`,
-                        `"${end - start}"`,
-                        `"${correct}"`,
-                        `"${cRate}"`,
-                        `"${fast}"`,
-                        `"${fRate}"`
-                    ].join(','));
+            const totalGroups = getTotalGroups();
+            for (let g = 0; g < totalGroups; g++) {
+                const { start, end } = getGroupRange(g);
+                let correct = 0, markedC = 0, fast = 0, markedF = 0;
+                for (let i = start; i < end; i++) {
+                    const r = results[i];
+                    if (r.correct === true) correct++;
+                    if (r.correct !== null) markedC++;
+                    if (r.timeFast === true) fast++;
+                    if (r.timeFast !== null) markedF++;
                 }
-
-                // 总汇总
-                lines.push('');
-                lines.push(['"=== 总汇总 ==="'].join(','));
-                lines.push(['"总题数"', `"${problems.length}"`].join(','));
-                lines.push(['"已标记对错"', `"${totalMarkedCorrect}"`].join(','));
-                lines.push(['"正确题数"', `"${totalCorrect}"`].join(','));
-                const correctRate = totalMarkedCorrect ? (totalCorrect / totalMarkedCorrect * 100).toFixed(1) + '%' : '—';
-                lines.push(['"总正确率"', `"${correctRate}"`].join(','));
-                lines.push(['"已标记速度"', `"${totalMarkedFast}"`].join(','));
-                lines.push(['"小于2s次数"', `"${totalFast}"`].join(','));
-                const fastRate = totalMarkedFast ? (totalFast / totalMarkedFast * 100).toFixed(1) + '%' : '—';
-                lines.push(['"总快速率"', `"${fastRate}"`].join(','));
-
-                const content = lines.join('\n');
-                const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
-                const fileName = `口算练习_${new Date().toISOString().slice(0, 10)}.csv`;
-
-                // iPhone / iPad 用 Web Share API
-                if (navigator.canShare) {
-                    const file = new File([blob], fileName, { type: 'text/csv' });
-                    if (navigator.canShare({ files: [file] })) {
-                        try {
-                            await navigator.share({
-                                files: [file],
-                                title: '口算练习结果'
-                            });
-                            return;
-                        } catch (err) {
-                            if (err.name === 'AbortError') return;
-                            console.log('分享失败，降级下载', err);
-                        }
-                    }
-                }
-
-                // 降级：普通下载
-                const url = URL.createObjectURL(blob);
-                const link = document.createElement('a');
-                link.href = url;
-                link.download = fileName;
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
-                URL.revokeObjectURL(url);
+                const cRate = markedC ? (correct / markedC * 100).toFixed(1) + '%' : '—';
+                const fRate = markedF ? (fast / markedF * 100).toFixed(1) + '%' : '—';
+                lines.push([
+                    `"${g + 1}"`,
+                    `"${end - start}"`,
+                    `"${correct}"`,
+                    `"${cRate}"`,
+                    `"${fast}"`,
+                    `"${fRate}"`
+                ].join(','));
             }
-        })();
-    </script>
+
+            lines.push('');
+            lines.push(['"=== 总汇总 ==="'].join(','));
+            lines.push(['"总题数"', `"${problems.length}"`].join(','));
+            lines.push(['"已标记对错"', `"${totalMarkedCorrect}"`].join(','));
+            lines.push(['"正确题数"', `"${totalCorrect}"`].join(','));
+            const correctRate = totalMarkedCorrect ? (totalCorrect / totalMarkedCorrect * 100).toFixed(1) + '%' : '—';
+            lines.push(['"总正确率"', `"${correctRate}"`].join(','));
+            lines.push(['"已标记速度"', `"${totalMarkedFast}"`].join(','));
+            lines.push(['"小于2s次数"', `"${totalFast}"`].join(','));
+            const fastRate = totalMarkedFast ? (totalFast / totalMarkedFast * 100).toFixed(1) + '%' : '—';
+            lines.push(['"总快速率"', `"${fastRate}"`].join(','));
+
+            const content = lines.join('\n');
+            const blob = new Blob(['\uFEFF' + content], { type: 'text/csv;charset=utf-8;' });
+            const fileName = `口算练习_${new Date().toISOString().slice(0, 10)}.csv`;
+
+            if (navigator.canShare) {
+                const file = new File([blob], fileName, { type: 'text/csv' });
+                if (navigator.canShare({ files: [file] })) {
+                    try {
+                        await navigator.share({
+                            files: [file],
+                            title: '口算练习结果'
+                        });
+                        return;
+                    } catch (err) {
+                        if (err.name === 'AbortError') return;
+                        console.log('分享失败，降级下载', err);
+                    }
+                }
+            }
+
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            URL.revokeObjectURL(url);
+        }
+
+        generateBtn.addEventListener('click', generateProblems);
+        resetBtn.addEventListener('click', resetAll);
+        exportBtn.addEventListener('click', exportToExcel);
+        markAllCorrectBtn.addEventListener('click', markGroupAllCorrect);
+        markAllFastBtn.addEventListener('click', markGroupAllFast);
+        prevGroupBtn.addEventListener('click', function() { goToGroup(currentGroup - 1); });
+        nextGroupBtn.addEventListener('click', function() { goToGroup(currentGroup + 1); });
+
+        function markGroupAllCorrect() {
+            if (problems.length === 0) return;
+            const { start, end } = getGroupRange(currentGroup);
+            for (let i = start; i < end; i++) {
+                if (results[i].correct === null) results[i].correct = true;
+            }
+            renderProblems();
+        }
+
+        function markGroupAllFast() {
+            if (problems.length === 0) return;
+            const { start, end } = getGroupRange(currentGroup);
+            for (let i = start; i < end; i++) {
+                if (results[i].timeFast === null) results[i].timeFast = true;
+            }
+            renderProblems();
+        }
+
+        function goToGroup(groupIdx) {
+            if (groupIdx < 0 || groupIdx >= getTotalGroups()) return;
+            stopTimer();
+            currentGroup = groupIdx;
+            currentIndexInGroup = 0;
+            renderProblems();
+            const firstGlobal = globalIdxFromGroup(currentGroup, 0);
+            if (firstGlobal < problems.length) {
+                startTimerForIndex(firstGlobal);
+            }
+        }
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' && problems.length > 0) {
+                const globalIdx = globalIdxFromGroup(currentGroup, currentIndexInGroup);
+                if (globalIdx < problems.length && results[globalIdx].correct === null) {
+                    const radio = document.querySelector(`input[name="correct-${globalIdx}"][value="true"]`);
+                    if (radio) {
+                        radio.checked = true;
+                        radio.dispatchEvent(new Event('change', { bubbles: true }));
+                    }
+                }
+            }
+        });
+
+        resetAll();
+    })();
+</script>
 </body>
 </html>
