@@ -336,6 +336,27 @@
             font-size: 16px !important;
         }
 
+        /* Toast 提示条 */
+        .toast {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: #1e293b;
+            color: white;
+            padding: 0.8rem 1.5rem;
+            border-radius: 0.8rem;
+            font-size: 1rem;
+            font-weight: 600;
+            z-index: 9999;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            animation: toastIn 0.3s ease;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(-50%) translateY(-20px); }
+            to { opacity: 1; transform: translateX(-50%) translateY(0); }
+        }
+
         @media (min-width: 600px) {
             .config-panel {
                 flex-direction: row;
@@ -429,6 +450,7 @@
         <span>⏳ 倒计时 <strong id="countdownTimer">5:00</strong></span>
     </div>
 
+    <!-- 顶部导航 -->
     <div class="group-nav" id="groupNav" style="display:none;">
         <button class="secondary" id="prevGroupBtn">← 上一组</button>
         <span id="groupLabel">第 1 / 1 组</span>
@@ -437,6 +459,13 @@
 
     <div class="problem-list" id="problemList">
         <div class="empty-state">👆 点击「生成题目」开始练习</div>
+    </div>
+
+    <!-- 底部导航（题目列表之后） -->
+    <div class="group-nav" id="groupNavBottom" style="display:none;">
+        <button class="secondary" id="prevGroupBtnBottom">← 上一组</button>
+        <span id="groupLabelBottom">第 1 / 1 组</span>
+        <button class="secondary" id="nextGroupBtnBottom">下一组 →</button>
     </div>
 
     <div id="groupSummaryContainer"></div>
@@ -486,10 +515,27 @@
         const groupLabel = document.getElementById('groupLabel');
         const prevGroupBtn = document.getElementById('prevGroupBtn');
         const nextGroupBtn = document.getElementById('nextGroupBtn');
+        const groupNavBottom = document.getElementById('groupNavBottom');
+        const groupLabelBottom = document.getElementById('groupLabelBottom');
+        const prevGroupBtnBottom = document.getElementById('prevGroupBtnBottom');
+        const nextGroupBtnBottom = document.getElementById('nextGroupBtnBottom');
         const groupSummaryContainer = document.getElementById('groupSummaryContainer');
         const markAllCorrectBtn = document.getElementById('markAllCorrectBtn');
         const markAllFastBtn = document.getElementById('markAllFastBtn');
 
+        // ========== Toast 提示 ==========
+        function showToast(msg, duration) {
+            duration = duration || 2000;
+            const toast = document.createElement('div');
+            toast.className = 'toast';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.remove();
+            }, duration);
+        }
+
+        // ========== 通用 ==========
         function getTotalGroups() {
             return Math.ceil(problems.length / GROUP_SIZE);
         }
@@ -586,10 +632,10 @@
         }
 
         function onTimeUp() {
-            alert('⏰ 时间到！');
+            showToast('⏰ 时间到！', 3000);
         }
 
-        // ========== 更新统计 ==========
+        // ========== 统计更新 ==========
         function updateStats() {
             const total = problems.length;
             const groups = getTotalGroups();
@@ -602,12 +648,18 @@
             if (total === 0) {
                 summaryStats.innerHTML = '<p>📊 总汇总统计将显示在这里</p>';
                 groupNav.style.display = 'none';
+                if (groupNavBottom) groupNavBottom.style.display = 'none';
                 groupSummaryContainer.innerHTML = '';
                 return;
             }
 
             groupNav.style.display = 'flex';
             groupLabel.textContent = `第 ${currentGroup + 1} / ${groups} 组`;
+
+            if (groupNavBottom) {
+                groupNavBottom.style.display = 'flex';
+                groupLabelBottom.textContent = `第 ${currentGroup + 1} / ${groups} 组`;
+            }
 
             let correctCount = 0, markedCorrect = 0, fastCount = 0, markedFast = 0;
             results.forEach(r => {
@@ -662,6 +714,7 @@
                 markAllCorrectBtn.disabled = true;
                 markAllFastBtn.disabled = true;
                 groupNav.style.display = 'none';
+                if (groupNavBottom) groupNavBottom.style.display = 'none';
                 groupSummaryContainer.innerHTML = '';
                 updateStats();
                 return;
@@ -725,6 +778,9 @@
 
             prevGroupBtn.disabled = (currentGroup === 0);
             nextGroupBtn.disabled = (currentGroup >= getTotalGroups() - 1);
+
+            if (prevGroupBtnBottom) prevGroupBtnBottom.disabled = (currentGroup === 0);
+            if (nextGroupBtnBottom) nextGroupBtnBottom.disabled = (currentGroup >= getTotalGroups() - 1);
         }
 
         // ========== 答题逻辑 ==========
@@ -764,11 +820,13 @@
                 } else {
                     const nextGroup = currentGroup + 1;
                     if (nextGroup < getTotalGroups()) {
+                        showToast(`✅ 第 ${currentGroup + 1} 组完成！进入下一组`);
                         currentGroup = nextGroup;
                         currentIndexInGroup = 0;
                         renderProblems();
                         startTimerForIndex(globalIdxFromGroup(currentGroup, 0));
                     } else {
+                        showToast('🎉 全部完成！', 3000);
                         renderProblems();
                         stopTimer();
                         currentTimerSpan.textContent = '0.0';
@@ -900,7 +958,7 @@
             currentIndexInGroup = 0;
 
             if (problems.length === 0) {
-                alert('当前难度和运算类型没有生成任何题目，请调整选项。');
+                showToast('当前难度和运算类型没有生成任何题目，请调整选项。', 3000);
                 return;
             }
 
@@ -1068,6 +1126,8 @@
         markAllFastBtn.addEventListener('click', markGroupAllFast);
         prevGroupBtn.addEventListener('click', function() { goToGroup(currentGroup - 1); });
         nextGroupBtn.addEventListener('click', function() { goToGroup(currentGroup + 1); });
+        if (prevGroupBtnBottom) prevGroupBtnBottom.addEventListener('click', function() { goToGroup(currentGroup - 1); });
+        if (nextGroupBtnBottom) nextGroupBtnBottom.addEventListener('click', function() { goToGroup(currentGroup + 1); });
 
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && problems.length > 0) {
