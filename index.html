@@ -76,7 +76,7 @@
             color: #475569;
         }
 
-        select, button {
+        select, button, input[type="number"] {
             padding: 0.8rem 1rem;
             border-radius: 0.7rem;
             border: 1px solid #cbd5e1;
@@ -410,6 +410,10 @@
                 <option value="random">随机生成</option>
             </select>
         </div>
+        <div class="config-group">
+            <label>限时（分钟）</label>
+            <input type="number" id="durationInput" value="5" min="1" max="60" step="1">
+        </div>
         <div class="config-buttons">
             <button class="primary" id="generateBtn">生成题目</button>
             <button class="secondary" id="resetBtn">重置</button>
@@ -422,6 +426,7 @@
         <span>📦 共 <strong id="totalGroups">0</strong> 组</span>
         <span>✅ 已标记 <strong id="markedCount">0</strong> 题</span>
         <span>⏱️ <strong id="currentTimer">0.0</strong> 秒</span>
+        <span>⏳ 倒计时 <strong id="countdownTimer">5:00</strong></span>
     </div>
 
     <div class="group-nav" id="groupNav" style="display:none;">
@@ -457,9 +462,16 @@
         let timerStart = null;
         let isTimerRunning = false;
 
+        // 倒计时变量
+        let countdownInterval = null;
+        let countdownRemain = 300;
+        let countdownRunning = false;
+        let countdownTotal = 300;
+
         const difficultySelect = document.getElementById('difficultySelect');
         const operationSelect = document.getElementById('operationSelect');
         const orderSelect = document.getElementById('orderSelect');
+        const durationInput = document.getElementById('durationInput');
         const generateBtn = document.getElementById('generateBtn');
         const resetBtn = document.getElementById('resetBtn');
         const exportBtn = document.getElementById('exportBtn');
@@ -468,6 +480,7 @@
         const totalGroupsSpan = document.getElementById('totalGroups');
         const markedCountSpan = document.getElementById('markedCount');
         const currentTimerSpan = document.getElementById('currentTimer');
+        const countdownTimerSpan = document.getElementById('countdownTimer');
         const summaryStats = document.getElementById('summaryStats');
         const groupNav = document.getElementById('groupNav');
         const groupLabel = document.getElementById('groupLabel');
@@ -520,6 +533,63 @@
             return groupIdx * GROUP_SIZE + idxInGroup;
         }
 
+        // ========== 倒计时 ==========
+        function startCountdown() {
+            stopCountdown();
+
+            let minutes = parseInt(durationInput.value, 10);
+            if (isNaN(minutes) || minutes < 1) minutes = 5;
+            if (minutes > 60) minutes = 60;
+
+            countdownTotal = minutes * 60;
+            countdownRemain = countdownTotal;
+            countdownRunning = true;
+
+            updateCountdownDisplay();
+
+            countdownInterval = setInterval(() => {
+                countdownRemain--;
+
+                if (countdownRemain <= 0) {
+                    countdownRemain = 0;
+                    updateCountdownDisplay();
+                    stopCountdown();
+                    onTimeUp();
+                    return;
+                }
+
+                updateCountdownDisplay();
+            }, 1000);
+        }
+
+        function stopCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+                countdownInterval = null;
+            }
+            countdownRunning = false;
+        }
+
+        function updateCountdownDisplay() {
+            if (!countdownTimerSpan) return;
+            const m = Math.floor(countdownRemain / 60);
+            const s = countdownRemain % 60;
+            countdownTimerSpan.textContent = `${m}:${s.toString().padStart(2, '0')}`;
+
+            if (countdownRemain <= 30) {
+                countdownTimerSpan.style.color = '#dc2626';
+                countdownTimerSpan.style.fontWeight = '700';
+            } else {
+                countdownTimerSpan.style.color = '';
+                countdownTimerSpan.style.fontWeight = '';
+            }
+        }
+
+        function onTimeUp() {
+            alert('⏰ 时间到！');
+        }
+
+        // ========== 更新统计 ==========
         function updateStats() {
             const total = problems.length;
             const groups = getTotalGroups();
@@ -584,6 +654,7 @@
             `;
         }
 
+        // ========== 渲染 ==========
         function renderProblems() {
             if (problems.length === 0) {
                 problemList.innerHTML = '<div class="empty-state">👆 点击「生成题目」开始练习</div>';
@@ -656,6 +727,7 @@
             nextGroupBtn.disabled = (currentGroup >= getTotalGroups() - 1);
         }
 
+        // ========== 答题逻辑 ==========
         function handleRadioChange(e) {
             const radio = e.target;
             const globalIdx = parseInt(radio.dataset.global, 10);
@@ -710,6 +782,7 @@
             }
         }
 
+        // ========== 生成题目 ==========
         function generateProblems() {
             stopTimer();
             const difficulty = difficultySelect.value;
@@ -833,10 +906,21 @@
 
             renderProblems();
             startTimerForIndex(0);
+            startCountdown();
         }
 
+        // ========== 重置 ==========
         function resetAll() {
             stopTimer();
+            stopCountdown();
+
+            let minutes = parseInt(durationInput.value, 10);
+            if (isNaN(minutes) || minutes < 1) minutes = 5;
+            if (minutes > 60) minutes = 60;
+            countdownTotal = minutes * 60;
+            countdownRemain = countdownTotal;
+            updateCountdownDisplay();
+
             problems = [];
             results = [];
             currentGroup = 0;
@@ -845,6 +929,7 @@
             renderProblems();
         }
 
+        // ========== 导出 CSV ==========
         async function exportToExcel() {
             if (problems.length === 0) return;
 
@@ -944,14 +1029,7 @@
             URL.revokeObjectURL(url);
         }
 
-        generateBtn.addEventListener('click', generateProblems);
-        resetBtn.addEventListener('click', resetAll);
-        exportBtn.addEventListener('click', exportToExcel);
-        markAllCorrectBtn.addEventListener('click', markGroupAllCorrect);
-        markAllFastBtn.addEventListener('click', markGroupAllFast);
-        prevGroupBtn.addEventListener('click', function() { goToGroup(currentGroup - 1); });
-        nextGroupBtn.addEventListener('click', function() { goToGroup(currentGroup + 1); });
-
+        // ========== 组导航 / 批量标记 ==========
         function markGroupAllCorrect() {
             if (problems.length === 0) return;
             const { start, end } = getGroupRange(currentGroup);
@@ -982,6 +1060,15 @@
             }
         }
 
+        // ========== 事件绑定 ==========
+        generateBtn.addEventListener('click', generateProblems);
+        resetBtn.addEventListener('click', resetAll);
+        exportBtn.addEventListener('click', exportToExcel);
+        markAllCorrectBtn.addEventListener('click', markGroupAllCorrect);
+        markAllFastBtn.addEventListener('click', markGroupAllFast);
+        prevGroupBtn.addEventListener('click', function() { goToGroup(currentGroup - 1); });
+        nextGroupBtn.addEventListener('click', function() { goToGroup(currentGroup + 1); });
+
         document.addEventListener('keydown', function(e) {
             if (e.key === 'Enter' && problems.length > 0) {
                 const globalIdx = globalIdxFromGroup(currentGroup, currentIndexInGroup);
@@ -995,6 +1082,7 @@
             }
         });
 
+        // 初始化
         resetAll();
     })();
 </script>
